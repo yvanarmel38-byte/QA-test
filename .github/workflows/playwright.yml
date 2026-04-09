@@ -69,16 +69,7 @@ jobs:
           path: allure-results/
           retention-days: 14
 
-      # ── 9. Upload JSON results (used by bug-report job) ─────────────────────
-      - name: Upload JSON results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: json-results-${{ matrix.browser }}
-          path: test-results/pw-results.json
-          retention-days: 14
-
-      # ── 10. Upload test artifacts (screenshots, videos, traces) ─────────────
+      # ── 9. Upload test artifacts (screenshots, videos, traces) ──────────────
       - name: Upload test artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -87,62 +78,3 @@ jobs:
           path: test-results/
           retention-days: 7
 
-  # ── Bug report job: runs after all 3 browser jobs ───────────────────────────
-  bug-report:
-    name: Generate Bug Report
-    needs: [test]
-    runs-on: ubuntu-latest
-    if: always()    # run even when some tests fail — failures are the report content
-
-    steps:
-      # ── 1. Checkout source code ─────────────────────────────────────────────
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # ── 2. Download JSON results from each browser job ───────────────────────
-      - name: Download JSON results — chromium
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: json-results-chromium
-          path: json-parts/chromium/
-
-      - name: Download JSON results — firefox
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: json-results-firefox
-          path: json-parts/firefox/
-
-      - name: Download JSON results — webkit
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: json-results-webkit
-          path: json-parts/webkit/
-
-      # ── 3. Set up Python and install openpyxl ───────────────────────────────
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install openpyxl
-        run: pip install openpyxl
-
-      # ── 4. Generate the bug report XLSX ─────────────────────────────────────
-      - name: Generate bug report XLSX
-        run: |
-          python scripts/generate_bug_report.py \
-            "Documents/new bug report.xlsx" \
-            json-parts/chromium/pw-results.json \
-            json-parts/firefox/pw-results.json \
-            json-parts/webkit/pw-results.json
-
-      # ── 5. Upload the bug report as a downloadable artifact ─────────────────
-      - name: Upload bug report artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: bug-report
-          path: "Documents/new bug report.xlsx"
-          retention-days: 30
