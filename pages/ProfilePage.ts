@@ -137,8 +137,7 @@ export class ProfilePage {
     await this.fillOptionalFields(data);
   }
 
-  // ── Actions ───────────────────────────────────────────────────────────────
-
+ 
   /** Click the Submit button. */
   async submit(): Promise<void> {
     await this.submitButton.click();
