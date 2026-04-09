@@ -1,0 +1,142 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:    # enables "Run workflow" button in the Actions tab
+
+jobs:
+  test:
+    name: Run Playwright Tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Run all browser jobs even if one fails
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      # ── 1. Checkout source code ─────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Node.js ───────────────────────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── 3. Install npm dependencies ─────────────────────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Install Playwright browsers ─────────────────────────────────────
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      # ── 5. Write .env from GitHub secret (or use defaults) ─────────────────
+      - name: Create .env file
+        run: echo "BASE_URL=${{ secrets.BASE_URL || 'https://qa-assessment.pages.dev' }}" > .env
+
+      # ── 6. Run tests for the current browser ───────────────────────────────
+      - name: Run Playwright tests — ${{ matrix.browser }}
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          CI: 'true'
+
+      # ── 7. Upload HTML report artifact ─────────────────────────────────────
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 14
+
+      # ── 8. Upload Allure results ────────────────────────────────────────────
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.browser }}
+          path: allure-results/
+          retention-days: 14
+
+      # ── 9. Upload JSON results (used by bug-report job) ─────────────────────
+      - name: Upload JSON results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: json-results-${{ matrix.browser }}
+          path: test-results/pw-results.json
+          retention-days: 14
+
+      # ── 10. Upload test artifacts (screenshots, videos, traces) ─────────────
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-${{ matrix.browser }}
+          path: test-results/
+          retention-days: 7
+
+  # ── Bug report job: runs after all 3 browser jobs ───────────────────────────
+  bug-report:
+    name: Generate Bug Report
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: always()    # run even when some tests fail — failures are the report content
+
+    steps:
+      # ── 1. Checkout source code ─────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Download JSON results from each browser job ───────────────────────
+      - name: Download JSON results — chromium
+        uses: actions/download-artifact@v4
+        with:
+          name: json-results-chromium
+          path: json-parts/chromium/
+
+      - name: Download JSON results — firefox
+        uses: actions/download-artifact@v4
+        with:
+          name: json-results-firefox
+          path: json-parts/firefox/
+
+      - name: Download JSON results — webkit
+        uses: actions/download-artifact@v4
+        with:
+          name: json-results-webkit
+          path: json-parts/webkit/
+
+      # ── 3. Set up Python and install openpyxl ───────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install openpyxl
+        run: pip install openpyxl
+
+      # ── 4. Generate the bug report XLSX ─────────────────────────────────────
+      - name: Generate bug report XLSX
+        run: |
+          python scripts/generate_bug_report.py \
+            "Documents/new bug report.xlsx" \
+            json-parts/chromium/pw-results.json \
+            json-parts/firefox/pw-results.json \
+            json-parts/webkit/pw-results.json
+
+      # ── 5. Upload the bug report as a downloadable artifact ─────────────────
+      - name: Upload bug report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bug-report
+          path: "Documents/new bug report.xlsx"
+          retention-days: 30

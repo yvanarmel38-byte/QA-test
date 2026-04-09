@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables — never commit real secrets
+.env
+
+# Playwright artifacts
+playwright-report/
+test-results/
+.playwright-cache/
+
+# Allure artifacts
+allure-results/
+allure-report/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

@@ -1,0 +1,6 @@
+# Normalize line endings: check out as-is, commit as LF
+* text=auto eol=lf
+
+# Force binary for Office documents
+*.xlsx binary
+*.docx binary
