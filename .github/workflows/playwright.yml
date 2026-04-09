@@ -98,18 +98,21 @@ jobs:
 
       # ── 2. Download JSON results from each browser job ───────────────────────
       - name: Download JSON results — chromium
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: json-results-chromium
           path: json-parts/chromium/
 
       - name: Download JSON results — firefox
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: json-results-firefox
           path: json-parts/firefox/
 
       - name: Download JSON results — webkit
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: json-results-webkit

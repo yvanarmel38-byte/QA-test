@@ -1,6 +1,6 @@
 # QA Assessment — Playwright Automation Suite
 
-[![Playwright Tests](https://github.com/yvanarmel38/qa-assessment-automation/actions/workflows/playwright.yml/badge.svg)](https://github.com/yvanarmel38/qa-assessment-automation/actions/workflows/playwright.yml)
+[![Playwright Tests](https://github.com/yvanarmel38-byte/QA-test/actions/workflows/playwright.yml/badge.svg)](https://github.com/yvanarmel38-byte/QA-test/actions/workflows/playwright.yml)
 
 Automated test suite for the [User Profile Creation](https://qa-assessment.pages.dev/) form, built with **Playwright** and **TypeScript**.
 
@@ -75,7 +75,7 @@ All failures are documented real application bugs — see `Documents/new bug rep
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yvanarmel38/qa-assessment-automation.git
+git clone https://github.com/yvanarmel38-byte/QA-test.git
 cd "review Qa"
 
 # 2. Install Node dependencies
